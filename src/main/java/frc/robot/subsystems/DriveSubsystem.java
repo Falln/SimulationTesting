@@ -106,6 +106,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     driveSim.update(0.02);
 
+    //update navX and Spark data (as much as needed)
     setSimDoubleFromDeviceData("navX-Sensor[0]", "Yaw", driveSim.getHeading().getDegrees());
     setSimDoubleFromDeviceData("SPARK MAX [4]", "Position", driveSim.getLeftPositionMeters());
     setSimDoubleFromDeviceData("SPARK MAX [5]", "Position", driveSim.getRightPositionMeters());
