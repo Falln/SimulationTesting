@@ -23,7 +23,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 public class DriveSubsystem extends SubsystemBase {
 
   //2 spark 2 encoders 1 gyro
-  CANSparkMAX leftDriveSpark;
+  Spark leftDriveSpark;
   Spark rightDriveSpark;
 
   Encoder leftEncoder; 
@@ -40,7 +40,7 @@ public class DriveSubsystem extends SubsystemBase {
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
     //Initalize different components
-    leftDriveSpark = new CANSparkMAX(0,SparkMAX.kBrushless);
+    leftDriveSpark = new Spark(0);
     rightDriveSpark = new Spark(1);
 
     drive = new DifferentialDrive(leftDriveSpark, rightDriveSpark);
