@@ -25,7 +25,7 @@ public class DriveSubsystem extends SubsystemBase {
   CANSparkMax rightSpark;
 
   RelativeEncoder leftEncoder;
-  RelativeEncoder righEncoder;
+  RelativeEncoder rightEncoder;
 
   AHRS navX;
   SimDeviceSim navXSim;
@@ -46,7 +46,7 @@ public class DriveSubsystem extends SubsystemBase {
     rightSpark.setInverted(true);
 
     leftEncoder = leftSpark.getEncoder();
-    righEncoder = rightSpark.getEncoder();
+    rightEncoder = rightSpark.getEncoder();
 
     navX = new AHRS(SPI.Port.kMXP);
     navXSim = new SimDeviceSim("navX-Sensor[0]");
@@ -94,7 +94,7 @@ public class DriveSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    odometry.update(Rotation2d.fromDegrees(getAngle()), leftEncoder.getPosition(), righEncoder.getPosition());
+    odometry.update(Rotation2d.fromDegrees(getAngle()), leftEncoder.getPosition(), rightEncoder.getPosition());
     field2d.setRobotPose(odometry.getPoseMeters());
   }
 
