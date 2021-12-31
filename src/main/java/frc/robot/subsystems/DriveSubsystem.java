@@ -1,18 +1,24 @@
 package frc.robot.subsystems;
 
+import javax.naming.directory.DirContext;
+
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
+import edu.wpi.first.hal.SimBoolean;
 import edu.wpi.first.hal.SimDouble;
+import edu.wpi.first.hal.SimValue;
 import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
+import edu.wpi.first.wpilibj.simulation.EncoderSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim.*;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -29,6 +35,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   AHRS navX;
   SimDeviceSim navXSim;
+
+  EncoderSim encoderSim;
 
   Field2d field2d;
   DifferentialDriveOdometry odometry;
@@ -61,47 +69,44 @@ public class DriveSubsystem extends SubsystemBase {
 
     //Things needed for drive simulation
     driveSim = DifferentialDrivetrainSim.createKitbotSim(
-      KitbotMotor.kDualCIMPerSide, // 2 CIMs per side.
+      KitbotMotor.kDoubleNEOPerSide, // 2 CIMs per side.
       KitbotGearing.k10p71,        // 10.71:1
       KitbotWheelSize.kSixInch,     // 6" diameter wheels.
       null                         // No measurement noise.
       );
-    // driveSim = new DifferentialDrivetrainSim( 
-    //   DCMotor.getNEO(1),
-    //   7.29,                    // 7.29:1 gearing reduction.
-    //   7.5,                     // MOI of 7.5 kg m^2 (from CAD model).
-    //   60.0,                    // The mass of the robot is 60 kg.
-    //   0.0508,                  // The robot uses 3" radius wheels.
-    //   0.381 * 2,               // The track width is 0.7112 meters.
-    //   null);
   }
 
-  //Drive Tank
+  /** Set the power of the left and right sides of the drivetrain independently */
   public void driveTank(double leftSpeed, double rightSpeed) {
     drive.tankDrive(leftSpeed, rightSpeed);
   }
 
-  //Get angle from gyro
+  /** Get angle from gyro */
   public double getAngle() {
     return navX.getAngle();
   }
 
-  //Stop all drive motors
+  /** Stop all drive motors */
   public void stopDrive() {
     drive.stopMotor();
+  }
+
+  /** Updates the drive odometry */
+  public void updateOdometry() {
+    odometry.update(Rotation2d.fromDegrees(getAngle()), leftEncoder.getPosition(), rightEncoder.getPosition());
   }
 
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
-    odometry.update(Rotation2d.fromDegrees(getAngle()), leftEncoder.getPosition(), rightEncoder.getPosition());
+    updateOdometry();
     field2d.setRobotPose(odometry.getPoseMeters());
   }
 
   @Override
   public void simulationPeriodic() {
-    //NOTE get() is - as our motor controllers are inverted (inversion happens on output, not on set()/get())
-    driveSim.setInputs(-leftSpark.get() * RobotController.getInputVoltage(),
+    //NOTE get() needs to be - as our motor controllers are inverted (inversion happens on output, not on set()/get())
+    driveSim.setInputs(-leftSpark.get() * RobotController.getInputVoltage(), //12*.5 =6v
     -rightSpark.get() * RobotController.getInputVoltage());
 
     driveSim.update(0.02);
@@ -114,11 +119,19 @@ public class DriveSubsystem extends SubsystemBase {
     setSimDoubleFromDeviceData("SPARK MAX [5]", "Applied Output", rightSpark.get());
   }
 
-  //Allows for shorter more direct references of SimDoubles
-  public void setSimDoubleFromDeviceData(String deviceName, String doubleName, double value) {
-    int device = SimDeviceDataJNI.getSimDeviceHandle(deviceName);
-    SimDouble simDouble = new SimDouble(SimDeviceDataJNI.getSimValueHandle(device, doubleName));
+  /** 
+   * Allows for shorter more direct references of SimDoubles. Takes a SimDevice device name,
+   * a key that points to a SimDouble, and a double to set the SimDouble to.
+   * 
+   * @param deviceName The name of the SimDevice
+   * @param keyName The key that the double is associated with'
+   * @param value Double that will be set to the SimDouble at the given key
+   */
+  public void setSimDoubleFromDeviceData(String deviceName, String keyName, double value) {
+    SimDouble simDouble = new SimDouble(
+      SimDeviceDataJNI.getSimValueHandle(
+          SimDeviceDataJNI.getSimDeviceHandle(deviceName),
+          keyName));
     simDouble.set(value);
   }
-
 }
