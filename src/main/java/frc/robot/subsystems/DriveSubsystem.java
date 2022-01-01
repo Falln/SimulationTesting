@@ -1,5 +1,18 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.RamseteController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.wpilibj2.command.RamseteCommand;
+import frc.robot.ConstantsPW;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import javax.naming.directory.DirContext;
 
 import com.kauailabs.navx.frc.AHRS;
@@ -15,19 +28,24 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.math.trajectory.TrajectoryUtil;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Encoder;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
-import edu.wpi.first.wpilibj.simulation.EncoderSim;
 import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
 import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim.*;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 import frc.robot.Robot;
+import frc.robot.commands.CustomRamseteCommand;
 
 public class DriveSubsystem extends SubsystemBase {
 
@@ -42,6 +60,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   DifferentialDrive drive;
   DifferentialDrivetrainSim driveSim;
+  double voltsSuppliedLeft = 0;
+  double voltsSuppliedRight = 0;
 
   Field2d field2d;
   DifferentialDriveOdometry odometry;
@@ -97,7 +117,9 @@ public class DriveSubsystem extends SubsystemBase {
   /** Sets the drivetrains speed in volts rather than based on a duty-cycle */
   public void driveTankVolts(double leftVolts, double rightVolts) {
     leftSpark.setVoltage(leftVolts);
-    rightSpark.setVoltage(rightVolts);
+    rightSpark.setVoltage(-rightVolts);
+    voltsSuppliedLeft = leftVolts;
+    voltsSuppliedRight = rightVolts;
     drive.feed();
   }
 
@@ -125,6 +147,11 @@ public class DriveSubsystem extends SubsystemBase {
   public void resetEncoders() {
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
+
+    if (Robot.isSimulation()) {
+      setSimDoubleFromDeviceData("SPARK MAX [4]", "Position", 0);
+      setSimDoubleFromDeviceData("SPARK MAX [5]", "Position", 0);
+    }
   }
 
   /** Returns a DiffDriveWheelSpeeds object based on the left and right encoder veloctiy in m/s */
@@ -140,6 +167,10 @@ public class DriveSubsystem extends SubsystemBase {
   /** Resets all values of the gyro */
   public void resetGyro() {
     navX.reset();
+
+    if (Robot.isSimulation()) {
+      setSimDoubleFromDeviceData("navX-Sensor[0]", "Yaw", 0);
+    }
   }
 
   /** 
@@ -160,11 +191,48 @@ public class DriveSubsystem extends SubsystemBase {
    * 
    * @param pose The pose to which to set the odometry.
    */
-  public void resetPose(Pose2d startingPose) {
+  public void setPose(Pose2d startingPose) {
     resetEncoders();
     //TODO might possibly need a -getAngle() call
-    odometry.resetPosition(startingPose, Rotation2d.fromDegrees(-getAngle()));
+    odometry.resetPosition(startingPose, Rotation2d.fromDegrees(getAngle()));
+    if (Robot.isSimulation()) {
+      driveSim.setPose(startingPose);
+    }
   }
+
+  public void setSimPose(Pose2d startingPose) {
+    driveSim.setPose(startingPose);
+  }
+
+
+
+  
+
+  public Trajectory loadTrajectoryFromPWJSON(String pathWeaverJSONName) {
+    try {
+      var filePath = Filesystem.getDeployDirectory().toPath().resolve(Paths.get("output", pathWeaverJSONName + ".wpilib.json"));
+      return TrajectoryUtil.fromPathweaverJson(filePath);
+    } catch (IOException ex) {
+      DriverStation.reportError("Unable to open trajectory: " + pathWeaverJSONName, ex.getStackTrace());
+      return new Trajectory();
+    }
+  }
+
+  public Command createCommandFromTrajectory(Trajectory trajectory, boolean initPose) {
+    if (initPose) {
+      return new InstantCommand(() -> this.setPose(trajectory.getInitialPose()))
+        .andThen(new CustomRamseteCommand(trajectory, this));
+    }
+    return new CustomRamseteCommand(trajectory, this);
+    }
+
+  public Command createCommandFromTrajectory(Trajectory trajectory) {
+      return new CustomRamseteCommand(trajectory, this);
+  }
+
+
+
+
 
   @Override
   public void periodic() {
@@ -176,17 +244,18 @@ public class DriveSubsystem extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     //NOTE get() needs to be - as our motor controllers are inverted (inversion happens on output, not on set()/get())
-    driveSim.setInputs(-leftSpark.get() * RobotController.getInputVoltage(),
-    -rightSpark.get() * RobotController.getInputVoltage());
-    
+    // driveSim.setInputs(-leftSpark.get() * RobotController.getInputVoltage(),
+    // -rightSpark.get() * RobotController.getInputVoltage());
+    driveSim.setInputs(-voltsSuppliedLeft, -voltsSuppliedRight);
+
     driveSim.update(0.02);
 
     //update navX and Spark data (as much as needed)
     setSimDoubleFromDeviceData("navX-Sensor[0]", "Yaw", driveSim.getHeading().getDegrees());
     setSimDoubleFromDeviceData("SPARK MAX [4]", "Position", driveSim.getLeftPositionMeters());
     setSimDoubleFromDeviceData("SPARK MAX [5]", "Position", driveSim.getRightPositionMeters());
-    setSimDoubleFromDeviceData("SPARK MAX [4]", "Applied Output", leftSpark.get());
-    setSimDoubleFromDeviceData("SPARK MAX [5]", "Applied Output", rightSpark.get());
+    setSimDoubleFromDeviceData("SPARK MAX [4]", "Applied Output", voltsSuppliedLeft);
+    setSimDoubleFromDeviceData("SPARK MAX [5]", "Applied Output", voltsSuppliedRight);
   }
 
   /** 

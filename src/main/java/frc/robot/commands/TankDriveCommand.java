@@ -31,7 +31,7 @@ public class TankDriveCommand extends CommandBase {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    driveSubsystem.driveTank(leftInput.getAsDouble(), rightInput.getAsDouble());
+    driveSubsystem.driveTankVolts(leftInput.getAsDouble()*12, rightInput.getAsDouble()*12);
   }
 
   // Called once the command ends or is interrupted.

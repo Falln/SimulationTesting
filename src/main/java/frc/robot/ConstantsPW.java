@@ -28,7 +28,7 @@ public final class ConstantsPW {
 
     //Voltage Contraints based on the Robot Charactization data.
     //Drivetrain voltage constraint based on 10V
-    public static final DifferentialDriveVoltageConstraint autoDriveVoltageConstraint10V = 
+    public static final DifferentialDriveVoltageConstraint autonDriveVoltageConstraint10V = 
         new DifferentialDriveVoltageConstraint(
             new SimpleMotorFeedforward(
                 ksVolts,
@@ -39,12 +39,12 @@ public final class ConstantsPW {
 
     //Trajectory configs
     //Trajectory config for autonomous
-    public static final TrajectoryConfig autoTrajectoryConfig = 
+    public static final TrajectoryConfig autonTrajectoryConfig = 
         new TrajectoryConfig(
             kMaxSpeedMetersPerSecond,
             kMaxAccelerationMetersPerSecondSquared)
         // Add kinematics to ensure max speed is actually obeyed
         .setKinematics(kDriveKinematics)
         // Apply the voltage constraint
-        .addConstraint(autoDriveVoltageConstraint10V);
+        .addConstraint(autonDriveVoltageConstraint10V);
     }
