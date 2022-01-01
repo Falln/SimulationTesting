@@ -4,18 +4,29 @@
 
 package frc.robot.commands;
 
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.RamseteController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj2.command.RamseteCommand;
+import frc.robot.ConstantsPW;
 import frc.robot.subsystems.DriveSubsystem;
 
 public class CustomRamseteCommand extends RamseteCommand {
   /** Creates a new RamseteCommand. */
-  public CustomRamseteCommand(Trajectory trajectory, boolean reversed, DriveSubsystem driveSubsystem) {
-    super();
-    // Use addRequirements() here to declare subsystem dependencies.
-  }
-
-  public CustomRamseteCommand() {
-    super();
+  public CustomRamseteCommand(Trajectory trajectory, DriveSubsystem driveSubsystem) {
+    super(
+      trajectory,
+      driveSubsystem::getPose,
+      new RamseteController(ConstantsPW.kRamseteB, ConstantsPW.kRamseteZeta),
+      new SimpleMotorFeedforward(ConstantsPW.ksVolts,
+                                 ConstantsPW.kvVoltSecondsPerMeter,
+                                 ConstantsPW.kaVoltSecondsSquaredPerMeter),
+      ConstantsPW.kDriveKinematics,
+      driveSubsystem::getWheelSpeeds,
+      new PIDController(ConstantsPW.driveP, 0, 0),
+      new PIDController(ConstantsPW.driveP, 0, 0),
+      driveSubsystem::driveTankVolts,
+      driveSubsystem);
   }
 }

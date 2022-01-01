@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
+import frc.robot.Robot;
 
 public class DriveSubsystem extends SubsystemBase {
 
@@ -97,6 +98,7 @@ public class DriveSubsystem extends SubsystemBase {
   public void driveTankVolts(double leftVolts, double rightVolts) {
     leftSpark.setVoltage(leftVolts);
     rightSpark.setVoltage(rightVolts);
+    drive.feed();
   }
 
   /** Stop all drive motors */
@@ -153,6 +155,17 @@ public class DriveSubsystem extends SubsystemBase {
     odometry.update(Rotation2d.fromDegrees(getAngle()), leftEncoder.getPosition(), rightEncoder.getPosition());
   }
 
+  /**
+   * Resets the odometry to the specified pose.
+   * 
+   * @param pose The pose to which to set the odometry.
+   */
+  public void resetPose(Pose2d startingPose) {
+    resetEncoders();
+    //TODO might possibly need a -getAngle() call
+    odometry.resetPosition(startingPose, Rotation2d.fromDegrees(-getAngle()));
+  }
+
   @Override
   public void periodic() {
     //This method will be called once per scheduler run
@@ -163,9 +176,9 @@ public class DriveSubsystem extends SubsystemBase {
   @Override
   public void simulationPeriodic() {
     //NOTE get() needs to be - as our motor controllers are inverted (inversion happens on output, not on set()/get())
-    driveSim.setInputs(-leftSpark.get() * RobotController.getInputVoltage(), //12*.5 =6v
+    driveSim.setInputs(-leftSpark.get() * RobotController.getInputVoltage(),
     -rightSpark.get() * RobotController.getInputVoltage());
-
+    
     driveSim.update(0.02);
 
     //update navX and Spark data (as much as needed)

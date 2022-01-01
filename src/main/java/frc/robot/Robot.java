@@ -35,11 +35,12 @@ public class Robot extends TimedRobot {
   public void robotInit() {
     nTInstance = NetworkTableInstance.getDefault();
     testTable = nTInstance.getTable("testTable");
+
     NetworkTableEntry helloThere = testTable.getEntry("C#Hello");
     NetworkTableEntry rioHelloThere = testTable.getEntry("rioHello");
     testTable.getEntry("rioHello").setString("Hello from Rio :)");
-
     SmartDashboard.putString("C#Hello", helloThere.getString(""));
+
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();

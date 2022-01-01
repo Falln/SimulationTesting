@@ -22,6 +22,6 @@ public final class Constants {
     public static final int leftDriveSparkPort = 0;
     public static final int rightDriveSparkPort = 1;
 
-    public static final double driveEncConversionFactor = Math.PI*wheelDiameter;
+    public static final double driveEncConversionFactor = Math.PI*wheelDiameter/(42*10.71);
 
 }
