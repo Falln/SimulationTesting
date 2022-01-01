@@ -25,6 +25,7 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.commands.*;
 import frc.robot.subsystems.*;
 
@@ -40,8 +41,8 @@ public class RobotContainer {
     public PathWeaverData(String pathWeaverJSON) {JSONName = pathWeaverJSON;}
   }
 
-  DriveSubsystem driveSubsystem = new DriveSubsystem();
-  XboxController driverController = new XboxController(0);
+  private final DriveSubsystem driveSubsystem = new DriveSubsystem();
+  private final XboxController driverController = new XboxController(0);
 
   //PathWeaverJSONs
   PathWeaverData testPath1 = new PathWeaverData("testPath1");
@@ -49,6 +50,8 @@ public class RobotContainer {
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
+
+    DriverStation.silenceJoystickConnectionWarning(true);
     
     //NetworkTable things
 
@@ -88,18 +91,18 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
 
-    testPath1.trajectory = 
-      TrajectoryGenerator.generateTrajectory(
-        new Pose2d(0,0, new Rotation2d(0)),
-        List.of(new Translation2d(1,4), new Translation2d(5,3)),
-        new Pose2d(6,6, new Rotation2d(0)), 
-        ConstantsPW.autonTrajectoryConfig);
+    // testPath1.trajectory = 
+    //   TrajectoryGenerator.generateTrajectory(
+    //     new Pose2d(0,0, new Rotation2d(0)),
+    //     List.of(new Translation2d(1,4), new Translation2d(5,3)),
+    //     new Pose2d(6,6, new Rotation2d(0)), 
+    //     ConstantsPW.autonTrajectoryConfig);
     
-      driveSubsystem.setSimPose(testPath1.trajectory.getInitialPose());
-      driveSubsystem.setPose(testPath1.trajectory.getInitialPose());
+    //driveSubsystem.setPose(testPath1.trajectory.getInitialPose());
 
-    CustomRamseteCommand path1Command = new CustomRamseteCommand(testPath1.trajectory, driveSubsystem);
-      return path1Command;
+    Command path1Command = driveSubsystem.createCommandFromTrajectory(testPath1.trajectory, true);
+    Command path2Command = driveSubsystem.createCommandFromTrajectory(testPath2.trajectory);
+    return path1Command.andThen(new WaitCommand(2)).andThen(path2Command);
   }
 
 

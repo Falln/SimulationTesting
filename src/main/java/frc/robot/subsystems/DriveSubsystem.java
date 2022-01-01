@@ -9,6 +9,7 @@ import frc.robot.ConstantsPW;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.System.Logger;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -60,6 +61,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   DifferentialDrive drive;
   DifferentialDrivetrainSim driveSim;
+
+  //Way of keeping track of volts since SparkMAX currently doesnt
   double voltsSuppliedLeft = 0;
   double voltsSuppliedRight = 0;
 
@@ -71,8 +74,14 @@ public class DriveSubsystem extends SubsystemBase {
     //Instantiate motor controllers and reverse them as reverse is the true robot front
     leftSpark = new CANSparkMax(4, MotorType.kBrushless);
     rightSpark = new CANSparkMax(5, MotorType.kBrushless);
-    leftSpark.setInverted(true);
-    rightSpark.setInverted(true);
+
+    if (Robot.isSimulation()) {
+      leftSpark.setInverted(true);
+      rightSpark.setInverted(true);
+    } else {
+      leftSpark.setInverted(true);
+      rightSpark.setInverted(true);
+    }
 
     //Get the RelativeEncoder object from the sparks 
     leftEncoder = leftSpark.getEncoder();
@@ -83,7 +92,6 @@ public class DriveSubsystem extends SubsystemBase {
 
     //Instantiate the navX and reset it as we're booting up
     navX = new AHRS(SPI.Port.kMXP);
-    navXSim = new SimDeviceSim("navX-Sensor[0]");
     navX.reset();
 
     //Instantiate the odometry object and the field2D
@@ -96,12 +104,14 @@ public class DriveSubsystem extends SubsystemBase {
     drive.setDeadband(0.07); //Same thing as setting a min input value but a little different
 
     //Things needed for drive simulation
-    driveSim = DifferentialDrivetrainSim.createKitbotSim(
-      KitbotMotor.kDoubleNEOPerSide, // 2 CIMs per side.
-      KitbotGearing.k10p71,        // 10.71:1
-      KitbotWheelSize.kSixInch,     // 6" diameter wheels.
-      null                         // No measurement noise.
-      );
+    if (Robot.isSimulation()) {
+      driveSim = DifferentialDrivetrainSim.createKitbotSim(
+        KitbotMotor.kDoubleNEOPerSide, // 2 CIMs per side.
+        KitbotGearing.k10p71,        // 10.71:1
+        KitbotWheelSize.kSixInch,     // 6" diameter wheels.
+        null                         // No measurement noise.
+        );
+    }
   }
 
   /** Set the power of the left and right sides of the drivetrain independently */
@@ -126,6 +136,8 @@ public class DriveSubsystem extends SubsystemBase {
   /** Stop all drive motors */
   public void stopDrive() {
     drive.stopMotor();
+    voltsSuppliedLeft = 0;
+    voltsSuppliedRight = 0;
   }
 
   /** Returns the distance in meters the left encoder has traveled */
@@ -206,7 +218,7 @@ public class DriveSubsystem extends SubsystemBase {
 
 
 
-  
+
 
   public Trajectory loadTrajectoryFromPWJSON(String pathWeaverJSONName) {
     try {
@@ -239,6 +251,8 @@ public class DriveSubsystem extends SubsystemBase {
     //This method will be called once per scheduler run
     updateOdometry();
     field2d.setRobotPose(odometry.getPoseMeters());
+    SmartDashboard.putNumber("Robot x", odometry.getPoseMeters().getTranslation().getX());
+    SmartDashboard.putNumber("Robot y", odometry.getPoseMeters().getTranslation().getY());
   }
 
   @Override
@@ -246,10 +260,11 @@ public class DriveSubsystem extends SubsystemBase {
     //NOTE get() needs to be - as our motor controllers are inverted (inversion happens on output, not on set()/get())
     // driveSim.setInputs(-leftSpark.get() * RobotController.getInputVoltage(),
     // -rightSpark.get() * RobotController.getInputVoltage());
-    driveSim.setInputs(-voltsSuppliedLeft, -voltsSuppliedRight);
+    driveSim.setInputs(voltsSuppliedLeft, voltsSuppliedRight);
 
     driveSim.update(0.02);
 
+    leftSpark.get();
     //update navX and Spark data (as much as needed)
     setSimDoubleFromDeviceData("navX-Sensor[0]", "Yaw", driveSim.getHeading().getDegrees());
     setSimDoubleFromDeviceData("SPARK MAX [4]", "Position", driveSim.getLeftPositionMeters());
@@ -257,6 +272,7 @@ public class DriveSubsystem extends SubsystemBase {
     setSimDoubleFromDeviceData("SPARK MAX [4]", "Applied Output", voltsSuppliedLeft);
     setSimDoubleFromDeviceData("SPARK MAX [5]", "Applied Output", voltsSuppliedRight);
   }
+  
 
   /** 
    * Allows for shorter more direct references of SimDoubles. Takes a SimDevice device name,

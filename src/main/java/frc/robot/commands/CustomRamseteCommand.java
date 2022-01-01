@@ -10,9 +10,13 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj2.command.RamseteCommand;
 import frc.robot.ConstantsPW;
+import frc.robot.RobotContainer;
 import frc.robot.subsystems.DriveSubsystem;
 
 public class CustomRamseteCommand extends RamseteCommand {
+
+  DriveSubsystem driveSubsystem;
+
   /** Creates a new RamseteCommand. */
   public CustomRamseteCommand(Trajectory trajectory, DriveSubsystem driveSubsystem) {
     super(
@@ -28,5 +32,11 @@ public class CustomRamseteCommand extends RamseteCommand {
       new PIDController(ConstantsPW.driveP, 0, 0),
       driveSubsystem::driveTankVolts,
       driveSubsystem);
+      this.driveSubsystem = driveSubsystem;
+  }
+
+  @Override
+  public void end(boolean interupted) {
+    driveSubsystem.stopDrive();
   }
 }
