@@ -1,17 +1,5 @@
 {
   "HALProvider": {
-    "Other Devices": {
-      "SPARK MAX [4]": {
-        "header": {
-          "open": true
-        }
-      },
-      "navX-Sensor[0]": {
-        "header": {
-          "open": true
-        }
-      }
-    },
     "RoboRIO": {
       "5V Rail": {
         "open": true
@@ -38,11 +26,19 @@
     },
     "windows": {
       "/SmartDashboard/Field": {
+        "Robot": {
+          "style": "Box/Image"
+        },
         "image": "C:\\Users\\isaac\\Downloads\\2020-field.png",
         "window": {
           "visible": true
         }
       }
+    }
+  },
+  "NetworkTables": {
+    "testTable": {
+      "open": true
     }
   }
 }

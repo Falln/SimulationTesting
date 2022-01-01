@@ -4,8 +4,14 @@
 
 package frc.robot;
 
+import java.util.function.DoubleConsumer;
+
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.*;
 import frc.robot.subsystems.*;
@@ -15,10 +21,15 @@ public class RobotContainer {
 
   DriveSubsystem driveSubsystem;
   XboxController driverController;
+  DoubleConsumer doubleConsumer;
+
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
     
+    //NetworkTable things
+
+
     driveSubsystem = new DriveSubsystem();
     driverController = new XboxController(0);
 

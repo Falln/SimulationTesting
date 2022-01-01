@@ -4,6 +4,8 @@
 
 package frc.robot.commands;
 
+import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
@@ -15,7 +17,7 @@ public class TankDriveCommand extends CommandBase {
   DoubleSupplier rightInput;
   boolean isFinished;
   /** Creates a new TankDrive. */
-  public TankDriveCommand(DoubleSupplier leftInput, DoubleSupplier rightInput, DriveSubsystem driveSubsystem) {
+  public TankDriveCommand(DoubleSupplier leftInput, DoubleSupplier rightInput,DriveSubsystem driveSubsystem) {
     this.driveSubsystem = driveSubsystem;
     this.leftInput = leftInput;
     this.rightInput = rightInput;

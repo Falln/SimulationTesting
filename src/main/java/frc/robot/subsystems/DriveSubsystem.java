@@ -11,8 +11,10 @@ import edu.wpi.first.hal.SimBoolean;
 import edu.wpi.first.hal.SimDouble;
 import edu.wpi.first.hal.SimValue;
 import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.SPI;
@@ -24,6 +26,7 @@ import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim.*;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
 
 public class DriveSubsystem extends SubsystemBase {
 
@@ -36,36 +39,40 @@ public class DriveSubsystem extends SubsystemBase {
   AHRS navX;
   SimDeviceSim navXSim;
 
-  EncoderSim encoderSim;
+  DifferentialDrive drive;
+  DifferentialDrivetrainSim driveSim;
 
   Field2d field2d;
   DifferentialDriveOdometry odometry;
 
-  DifferentialDrive drive;
-  DifferentialDrivetrainSim driveSim;
-
-
   /** Creates a new DriveSubsystem. */
   public DriveSubsystem() {
-    //Initalize different components
+    //Instantiate motor controllers and reverse them as reverse is the true robot front
     leftSpark = new CANSparkMax(4, MotorType.kBrushless);
     rightSpark = new CANSparkMax(5, MotorType.kBrushless);
     leftSpark.setInverted(true);
     rightSpark.setInverted(true);
 
+    //Get the RelativeEncoder object from the sparks 
     leftEncoder = leftSpark.getEncoder();
     rightEncoder = rightSpark.getEncoder();
+    //TODO figure out correct conversion factor. NOTE must be in meters
+    leftEncoder.setPositionConversionFactor(Constants.driveEncConversionFactor);
+    rightEncoder.setPositionConversionFactor(Constants.driveEncConversionFactor);
 
+    //Instantiate the navX and reset it as we're booting up
     navX = new AHRS(SPI.Port.kMXP);
     navXSim = new SimDeviceSim("navX-Sensor[0]");
     navX.reset();
 
+    //Instantiate the odometry object and the field2D
     odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(getAngle()));
     field2d = new Field2d();
     SmartDashboard.putData("Field", field2d);
 
+    //Instantiate the drivetrain
     drive = new DifferentialDrive(leftSpark, rightSpark);
-    drive.setDeadband(0.09); //Same thing as setting a min input value but a little different
+    drive.setDeadband(0.07); //Same thing as setting a min input value but a little different
 
     //Things needed for drive simulation
     driveSim = DifferentialDrivetrainSim.createKitbotSim(
@@ -80,15 +87,65 @@ public class DriveSubsystem extends SubsystemBase {
   public void driveTank(double leftSpeed, double rightSpeed) {
     drive.tankDrive(leftSpeed, rightSpeed);
   }
+  
+  /** Drive the drivetrain similar to a videogame 1st person shooter */
+  public void driveArcade(double speed, double rotation) {
+    drive.arcadeDrive(speed, rotation);
+  }
 
-  /** Get angle from gyro */
-  public double getAngle() {
-    return navX.getAngle();
+  /** Sets the drivetrains speed in volts rather than based on a duty-cycle */
+  public void driveTankVolts(double leftVolts, double rightVolts) {
+    leftSpark.setVoltage(leftVolts);
+    rightSpark.setVoltage(rightVolts);
   }
 
   /** Stop all drive motors */
   public void stopDrive() {
     drive.stopMotor();
+  }
+
+  /** Returns the distance in meters the left encoder has traveled */
+  public double getLeftEncoderDistance() {
+    return leftEncoder.getPosition();
+  }
+
+  /** Returns the distance in meters the right encoder has traveled */
+  public double getRightEncoderDistance() {
+    return rightEncoder.getPosition();
+  }
+
+  /** Returns the avergae distance in meters both encoders have traveled */
+  public double getAveEncDistance() {
+    return (getLeftEncoderDistance() + getRightEncoderDistance())/2;
+  }
+
+  /** Resets the postion of both encoders to 0 */
+  public void resetEncoders() {
+    leftEncoder.setPosition(0);
+    rightEncoder.setPosition(0);
+  }
+
+  /** Returns a DiffDriveWheelSpeeds object based on the left and right encoder veloctiy in m/s */
+  public DifferentialDriveWheelSpeeds getWheelSpeeds() {
+    return new DifferentialDriveWheelSpeeds(leftEncoder.getVelocity(), rightEncoder.getVelocity());
+  }
+
+  /** Gets the angle from gyro in degrees. Note this is the yaw of the navX */
+  public double getAngle() {
+    return navX.getAngle();
+  }
+
+  /** Resets all values of the gyro */
+  public void resetGyro() {
+    navX.reset();
+  }
+
+  /** 
+   * Gets the current calculated pose of the robot. This is determined by the driveOdometry that is 
+   * updated in the periodic loop
+   */
+  public Pose2d getPose() {
+    return odometry.getPoseMeters();
   }
 
   /** Updates the drive odometry */
@@ -98,7 +155,7 @@ public class DriveSubsystem extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
+    //This method will be called once per scheduler run
     updateOdometry();
     field2d.setRobotPose(odometry.getPoseMeters());
   }
