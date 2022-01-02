@@ -32,8 +32,11 @@ import frc.robot.subsystems.*;
 
 public class RobotContainer {
 
-  //Class for storing both the JSON string for a PathWeaver file, 
-  //as well as the trajectory generated from it
+  /**
+   * This class simply allows us to store the PathWeaver JSON name and the 
+   * trajectory associated with it in the same place (and possibly the 
+   * command created from it too - not used currently) 
+   */
   class PathWeaverData {
     public String JSONName;
     public Trajectory trajectory;
@@ -41,7 +44,10 @@ public class RobotContainer {
     public PathWeaverData(String pathWeaverJSON) {JSONName = pathWeaverJSON;}
   }
 
+  //Subsystems
   private final DriveSubsystem driveSubsystem = new DriveSubsystem();
+
+  //Controllers and Triggers
   private final XboxController driverController = new XboxController(0);
 
   //PathWeaverJSONs
@@ -51,10 +57,12 @@ public class RobotContainer {
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
 
+    //Silence the "Missing Joystick" warnings
     DriverStation.silenceJoystickConnectionWarning(true);
     
     //NetworkTable things
 
+    //Configure the Button/Trigger bindings
     configureButtonBindings();
 
     //Set the default commands of subsystems
@@ -63,7 +71,7 @@ public class RobotContainer {
       () -> driverController.getRightY(),
       driveSubsystem));
 
-      //Load all paths
+    //Load all paths
     loadPathWeaverTrajectories(testPath1, testPath2);
   }
 
@@ -78,6 +86,11 @@ public class RobotContainer {
       
   }
 
+  /**
+   * Takes the given PathWeaverDatas, generates the trajectory assoicated with the
+   * JSONName they have, and then sets the PathWeaverData's trajectory to that trajectory
+   * @param pathWeaverData PathWeaverData class to load trajectories to
+   */
   private void loadPathWeaverTrajectories(PathWeaverData... pathWeaverData) {
     for (PathWeaverData pwData:pathWeaverData) {
       pwData.trajectory = driveSubsystem.loadTrajectoryFromPWJSON((pwData.JSONName));
@@ -90,18 +103,11 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-
-    // testPath1.trajectory = 
-    //   TrajectoryGenerator.generateTrajectory(
-    //     new Pose2d(0,0, new Rotation2d(0)),
-    //     List.of(new Translation2d(1,4), new Translation2d(5,3)),
-    //     new Pose2d(6,6, new Rotation2d(0)), 
-    //     ConstantsPW.autonTrajectoryConfig);
-    
-    //driveSubsystem.setPose(testPath1.trajectory.getInitialPose());
-
+    //Generate the path commands
     Command path1Command = driveSubsystem.createCommandFromTrajectory(testPath1.trajectory, true);
     Command path2Command = driveSubsystem.createCommandFromTrajectory(testPath2.trajectory);
+
+    //Return the combined command
     return path1Command.andThen(new WaitCommand(2)).andThen(path2Command);
   }
 

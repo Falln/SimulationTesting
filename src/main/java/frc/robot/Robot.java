@@ -33,6 +33,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {
+    //Messing around with NetworkTables
     nTInstance = NetworkTableInstance.getDefault();
     testTable = nTInstance.getTable("testTable");
 

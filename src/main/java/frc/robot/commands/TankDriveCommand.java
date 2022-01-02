@@ -31,6 +31,8 @@ public class TankDriveCommand extends CommandBase {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
+    //TODO this is set to driveTankVolts for the simulation, as I cant keep track of volts through
+    //driveTank
     driveSubsystem.driveTankVolts(leftInput.getAsDouble()*12, rightInput.getAsDouble()*12);
   }
 

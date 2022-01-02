@@ -13,6 +13,14 @@ import frc.robot.ConstantsPW;
 import frc.robot.RobotContainer;
 import frc.robot.subsystems.DriveSubsystem;
 
+/**
+ * Simple command that simplifies the RamseteCommand's complex constructor
+ * down to two arguments: 
+ * <p>1. The Trajectory to follow
+ * <p>2. The DriveSubsystem
+ * <p>Also stops the drivetrain no matter what on completion which RamseteCommand
+ * seems to fail at sometimes
+ */
 public class CustomRamseteCommand extends RamseteCommand {
 
   DriveSubsystem driveSubsystem;

@@ -57,12 +57,13 @@ public class DriveSubsystem extends SubsystemBase {
   RelativeEncoder rightEncoder;
 
   AHRS navX;
-  SimDeviceSim navXSim;
 
   DifferentialDrive drive;
   DifferentialDrivetrainSim driveSim;
 
-  //Way of keeping track of volts since SparkMAX currently doesnt
+  //Keeps track of applied volts if the tankDriveVolts method is called.
+  //Note this is only accurate for when tankDriveVolts is called, as this is appliedVoltage
+  //and not outputVoltage
   double voltsSuppliedLeft = 0;
   double voltsSuppliedRight = 0;
 
@@ -75,6 +76,7 @@ public class DriveSubsystem extends SubsystemBase {
     leftSpark = new CANSparkMax(4, MotorType.kBrushless);
     rightSpark = new CANSparkMax(5, MotorType.kBrushless);
 
+    //Simulated robots and real robots can have different inversion factors
     if (Robot.isSimulation()) {
       leftSpark.setInverted(true);
       rightSpark.setInverted(true);
@@ -104,6 +106,7 @@ public class DriveSubsystem extends SubsystemBase {
     drive.setDeadband(0.07); //Same thing as setting a min input value but a little different
 
     //Things needed for drive simulation
+    //Only create if its a simulation
     if (Robot.isSimulation()) {
       driveSim = DifferentialDrivetrainSim.createKitbotSim(
         KitbotMotor.kDoubleNEOPerSide, // 2 CIMs per side.
@@ -159,7 +162,7 @@ public class DriveSubsystem extends SubsystemBase {
   public void resetEncoders() {
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
-
+    
     if (Robot.isSimulation()) {
       setSimDoubleFromDeviceData("SPARK MAX [4]", "Position", 0);
       setSimDoubleFromDeviceData("SPARK MAX [5]", "Position", 0);
@@ -199,7 +202,8 @@ public class DriveSubsystem extends SubsystemBase {
   }
 
   /**
-   * Resets the odometry to the specified pose.
+   * Resets the odometry to the specified pose. If this is a simulation, it will also set the pose
+   * of the drivetrain simulator to the specified pose.
    * 
    * @param pose The pose to which to set the odometry.
    */
@@ -212,14 +216,22 @@ public class DriveSubsystem extends SubsystemBase {
     }
   }
 
+  /** Allows the manual setting/resetting of the simulated drive pose */
   public void setSimPose(Pose2d startingPose) {
     driveSim.setPose(startingPose);
   }
 
-
-
-
-
+  /**
+   * Takes a given JSON name and converts it to a WPILib Trajectory object. This method assumes that
+   * the given String is the name of a PathWeaver Path and will automatically add the .wpilib.json suffix
+   * and knows where the PathWeaver JSONs are stored. 
+   * For this project the JSONs should be stored in src\main\java\frc\robot\output 
+   * 
+   * @param pathWeaverJSONName The name of the PathWeaver JSON that you would like to load the trajectory from.
+   *                           The .wpilib.json is added automatically, so the name should only be the 
+   *                           pathName part from this example: output\<i><b>pathName</b></i>.wpilib.json
+   * @return the Trajectory loaded from the given PathWeaver JSON
+   */
   public Trajectory loadTrajectoryFromPWJSON(String pathWeaverJSONName) {
     try {
       var filePath = Filesystem.getDeployDirectory().toPath().resolve(Paths.get("output", pathWeaverJSONName + ".wpilib.json"));
@@ -230,6 +242,17 @@ public class DriveSubsystem extends SubsystemBase {
     }
   }
 
+  /**
+   * Takes a given trajectory and creates a CustomRamseteCommand from the trajectory automatically. If
+   * initPose if set to true, it will also add a Command that will set the pose of the robot (set the 
+   * driveOdometry's pose2D) to the starting pose of the given trajectory. Note, it only sets the pose
+   * when this command is executed, not when it is created.  
+   * 
+   * @param trajectory Trajectory to be used to create the CustomRamseteCommand
+   * @param initPose Whether the starting pose of the Trajectory should be used to reset the pose 
+   *                 of the drivetrain
+   * @return The CustomRamseteCommand/Command created
+   */
   public Command createCommandFromTrajectory(Trajectory trajectory, boolean initPose) {
     if (initPose) {
       return new InstantCommand(() -> this.setPose(trajectory.getInitialPose()))
@@ -238,13 +261,15 @@ public class DriveSubsystem extends SubsystemBase {
     return new CustomRamseteCommand(trajectory, this);
     }
 
+  /**
+   * Takes a given trajectory and creates a CustomRamseteCommand from the trajectory automatically. 
+   * 
+   * @param trajectory Trajectory to be used to create the CustomRamseteCommand
+   * @return The CustomRamseteCommand/Command created
+   */
   public Command createCommandFromTrajectory(Trajectory trajectory) {
       return new CustomRamseteCommand(trajectory, this);
   }
-
-
-
-
 
   @Override
   public void periodic() {
@@ -257,14 +282,12 @@ public class DriveSubsystem extends SubsystemBase {
 
   @Override
   public void simulationPeriodic() {
-    //NOTE get() needs to be - as our motor controllers are inverted (inversion happens on output, not on set()/get())
     // driveSim.setInputs(-leftSpark.get() * RobotController.getInputVoltage(),
     // -rightSpark.get() * RobotController.getInputVoltage());
     driveSim.setInputs(voltsSuppliedLeft, voltsSuppliedRight);
 
     driveSim.update(0.02);
 
-    leftSpark.get();
     //update navX and Spark data (as much as needed)
     setSimDoubleFromDeviceData("navX-Sensor[0]", "Yaw", driveSim.getHeading().getDegrees());
     setSimDoubleFromDeviceData("SPARK MAX [4]", "Position", driveSim.getLeftPositionMeters());
