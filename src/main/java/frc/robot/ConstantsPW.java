@@ -26,7 +26,7 @@ public final class ConstantsPW {
     public static final double kRamseteB = 2;
     public static final double kRamseteZeta = 0.7;
 
-    //Voltage Contraints based on the Robot Charactization data.
+    //Voltage Constraints based on the Robot Characterization data.
     //Drivetrain voltage constraint based on 10V
     public static final DifferentialDriveVoltageConstraint autonDriveVoltageConstraint10V = 
         new DifferentialDriveVoltageConstraint(

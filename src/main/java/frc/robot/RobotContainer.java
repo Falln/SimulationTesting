@@ -4,30 +4,16 @@
 
 package frc.robot;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.DoubleConsumer;
+import javax.swing.text.html.HTMLDocument.RunElement;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.geometry.Transform2d;
-import edu.wpi.first.math.geometry.Translation2d;
-import edu.wpi.first.math.trajectory.*;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.WaitCommand;
-import frc.robot.commands.*;
-import frc.robot.subsystems.*;
+import frc.robot.commands.TankDriveCommand;
+import frc.robot.subsystems.DriveSubsystem;
 
 
 public class RobotContainer {
@@ -53,6 +39,8 @@ public class RobotContainer {
   //PathWeaverJSONs
   PathWeaverData testPath1 = new PathWeaverData("testPath1");
   PathWeaverData testPath2 = new PathWeaverData("testPath2");
+  PathWeaverData newNewPathCopy = new PathWeaverData("New New Path Copy");
+  
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
@@ -72,7 +60,7 @@ public class RobotContainer {
       driveSubsystem));
 
     //Load all paths
-    loadPathWeaverTrajectories(testPath1, testPath2);
+    loadPathWeaverTrajectories(testPath1, testPath2, newNewPathCopy);
   }
 
 
@@ -87,7 +75,7 @@ public class RobotContainer {
   }
 
   /**
-   * Takes the given PathWeaverDatas, generates the trajectory assoicated with the
+   * Takes the given PathWeaverDatas, generates the trajectory associated with the
    * JSONName they have, and then sets the PathWeaverData's trajectory to that trajectory
    * @param pathWeaverData PathWeaverData class to load trajectories to
    */
@@ -108,7 +96,9 @@ public class RobotContainer {
     Command path2Command = driveSubsystem.createCommandFromTrajectory(testPath2.trajectory);
 
     //Return the combined command
-    return path1Command.andThen(new WaitCommand(2)).andThen(path2Command);
+    //return path1Command.andThen(new WaitCommand(2)).andThen(path2Command);
+    return driveSubsystem.createCommandFromTrajectory(newNewPathCopy.trajectory, true);
+
   }
 
 

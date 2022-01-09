@@ -10,7 +10,6 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.wpilibj2.command.RamseteCommand;
 import frc.robot.ConstantsPW;
-import frc.robot.RobotContainer;
 import frc.robot.subsystems.DriveSubsystem;
 
 /**
@@ -19,13 +18,13 @@ import frc.robot.subsystems.DriveSubsystem;
  * <p>1. The Trajectory to follow
  * <p>2. The DriveSubsystem
  * <p>Also stops the drivetrain no matter what on completion which RamseteCommand
- * seems to fail at sometimes
+ * seems to fail to do at times
  */
 public class CustomRamseteCommand extends RamseteCommand {
 
   DriveSubsystem driveSubsystem;
 
-  /** Creates a new RamseteCommand. */
+  /** Creates a new CustomRamseteCommand. */
   public CustomRamseteCommand(Trajectory trajectory, DriveSubsystem driveSubsystem) {
     super(
       trajectory,
@@ -43,8 +42,8 @@ public class CustomRamseteCommand extends RamseteCommand {
       this.driveSubsystem = driveSubsystem;
   }
 
-  @Override
-  public void end(boolean interupted) {
+  public void end(boolean interrupted) {
+    super.end(interrupted);
     driveSubsystem.stopDrive();
   }
 }

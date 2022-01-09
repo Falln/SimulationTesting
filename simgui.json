@@ -1,13 +1,4 @@
 {
-  "HALProvider": {
-    "Other Devices": {
-      "SPARK MAX [4]": {
-        "header": {
-          "open": true
-        }
-      }
-    }
-  },
   "NTProvider": {
     "types": {
       "/FMSInfo": "FMSInfo",
@@ -102,9 +93,9 @@
       "/SmartDashboard/Field": {
         "Robot": {
           "arrowWeight": 1.0,
-          "length": 0.4000000059604645,
+          "length": 1.0,
           "weight": 1.0,
-          "width": 0.30000001192092896
+          "width": 1.0
         },
         "image": "C:\\Users\\isaac\\Downloads\\2020-field.png",
         "p1": {

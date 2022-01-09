@@ -1,44 +1,29 @@
 package frc.robot.subsystems;
 
-import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.RamseteController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.trajectory.Trajectory;
-import edu.wpi.first.wpilibj2.command.RamseteCommand;
-import frc.robot.ConstantsPW;
-
-import java.io.File;
 import java.io.IOException;
-import java.lang.System.Logger;
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-
-import javax.naming.directory.DirContext;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.revrobotics.CANSparkMax;
-import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.RelativeEncoder;
 
-import edu.wpi.first.hal.SimBoolean;
 import edu.wpi.first.hal.SimDouble;
-import edu.wpi.first.hal.SimValue;
 import edu.wpi.first.hal.simulation.SimDeviceDataJNI;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
+import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryUtil;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.Filesystem;
-import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim;
-import edu.wpi.first.wpilibj.simulation.SimDeviceSim;
-import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim.*;
+import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim.KitbotGearing;
+import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim.KitbotMotor;
+import edu.wpi.first.wpilibj.simulation.DifferentialDrivetrainSim.KitbotWheelSize;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -88,7 +73,7 @@ public class DriveSubsystem extends SubsystemBase {
     //Get the RelativeEncoder object from the sparks 
     leftEncoder = leftSpark.getEncoder();
     rightEncoder = rightSpark.getEncoder();
-    //TODO figure out correct conversion factor. NOTE must be in meters
+    //TODO figure out correct conversion factor. NOTE: must be in meters
     leftEncoder.setPositionConversionFactor(Constants.driveEncConversionFactor);
     rightEncoder.setPositionConversionFactor(Constants.driveEncConversionFactor);
 
@@ -122,7 +107,7 @@ public class DriveSubsystem extends SubsystemBase {
     drive.tankDrive(leftSpeed, rightSpeed);
   }
   
-  /** Drive the drivetrain similar to a videogame 1st person shooter */
+  /** Drive the drivetrain similar to a video game 1st person shooter */
   public void driveArcade(double speed, double rotation) {
     drive.arcadeDrive(speed, rotation);
   }
@@ -153,12 +138,12 @@ public class DriveSubsystem extends SubsystemBase {
     return rightEncoder.getPosition();
   }
 
-  /** Returns the avergae distance in meters both encoders have traveled */
+  /** Returns the average distance in meters both encoders have traveled */
   public double getAveEncDistance() {
     return (getLeftEncoderDistance() + getRightEncoderDistance())/2;
   }
 
-  /** Resets the postion of both encoders to 0 */
+  /** Resets the position of both encoders to 0 */
   public void resetEncoders() {
     leftEncoder.setPosition(0);
     rightEncoder.setPosition(0);
@@ -169,7 +154,7 @@ public class DriveSubsystem extends SubsystemBase {
     }
   }
 
-  /** Returns a DiffDriveWheelSpeeds object based on the left and right encoder veloctiy in m/s */
+  /** Returns a DiffDriveWheelSpeeds object based on the left and right encoder velocity in m/s */
   public DifferentialDriveWheelSpeeds getWheelSpeeds() {
     return new DifferentialDriveWheelSpeeds(leftEncoder.getVelocity(), rightEncoder.getVelocity());
   }
@@ -244,8 +229,8 @@ public class DriveSubsystem extends SubsystemBase {
 
   /**
    * Takes a given trajectory and creates a CustomRamseteCommand from the trajectory automatically. If
-   * initPose if set to true, it will also add a Command that will set the pose of the robot (set the 
-   * driveOdometry's pose2D) to the starting pose of the given trajectory. Note, it only sets the pose
+   * initPose is set to true, it will also add a Command that will set the pose of the robot (set the 
+   * driveOdometry's pose2D) to the starting pose of the given trajectory. Note: it only sets the pose
    * when this command is executed, not when it is created.  
    * 
    * @param trajectory Trajectory to be used to create the CustomRamseteCommand
